@@ -2,7 +2,7 @@ import React from 'react';
 import ArcherContainer from '../src/ArcherContainer';
 import ArcherElement from '../src/ArcherElement';
 
-const rootStyle = { display: 'flex', justifyContent: 'center' };
+const rootStyle = { display: 'flex', justifyContent: 'center', position: 'relative', top: '400px' };
 const rowStyle = {
   margin: '200px 0',
   display: 'flex',
@@ -13,7 +13,7 @@ const boxStyle = { padding: '10px', border: '1px solid black' };
 const FirstExample = () => {
   return (
     <div style={{ height: '500px', margin: '50px' }}>
-      <ArcherContainer strokeColor="red">
+      <ArcherContainer strokeColor="red" style={{height: '100%'}}>
         <div style={rootStyle}>
           <ArcherElement
             id="root"

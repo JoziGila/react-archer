@@ -15,8 +15,8 @@ type Props = {
   arrowMarkerId: string,
 };
 
-function computeEndingArrowDirectionVector(endingAnchor) {
-  switch (endingAnchor) {
+function computeAnchorDirectionVector(anchor) {
+  switch (anchor) {
     case 'left':
       return { arrowX: -1, arrowY: 0 };
     case 'right':
@@ -31,18 +31,100 @@ function computeEndingArrowDirectionVector(endingAnchor) {
 }
 
 export function computeEndingPointAccordingToArrow(
-  xEnd: number,
-  yEnd: number,
+  end: Point,
   arrowLength: number,
   strokeWidth: number,
   endingAnchor: AnchorPositionType,
 ) {
-  const { arrowX, arrowY } = computeEndingArrowDirectionVector(endingAnchor);
+  const { arrowX, arrowY } = computeAnchorDirectionVector(endingAnchor);
 
-  const xe = xEnd + (arrowX * arrowLength * strokeWidth) / 2;
-  const ye = yEnd + (arrowY * arrowLength * strokeWidth) / 2;
+  const x = end.x + (arrowX * arrowLength * strokeWidth) / 2;
+  const y = end.y + (arrowY * arrowLength * strokeWidth) / 2;
 
-  return { xe, ye };
+  return { x, y };
+}
+
+export function computeAnchor(
+  point: Point,
+  anchorPosition: AnchorPositionType
+) {
+  const aDirection = computeAnchorDirectionVector(anchorPosition);
+  const anchor = {
+    x: point.x + (aDirection.arrowX * 30),
+    y: point.y + (aDirection.arrowY * 30)
+  }
+  return anchor;
+}
+
+export function computeAnchors(
+  start: Point,
+  end: Point,
+  startingAnchor: AnchorPositionType,
+  endingAnchor: AnchorPositionType
+) {
+  const a1 = computeAnchor(start, startingAnchor);
+  const a2 = computeAnchor(end, endingAnchor);
+
+  return {a1, a2}
+}
+
+export function computeBreakpoint(
+  start: Point,
+  end: Point,
+  anchorPosition: AnchorPositionType,
+  isStart: boolean
+) {
+  const b = {
+    x: end.y < start.y ? mX : point.x,
+    y: end.y < start.y ? point.y : point.x
+  }
+}
+
+export function computeBreakpoints(
+  start: Point,
+  end: Point,
+  startingAnchor: AnchorPositionType,
+  endingAnchor: AnchorPositionType
+) {
+  const mX = (start.x + end.x) / 2;
+  const mY = (start.y + end.y) / 2;
+
+  let b1 = {};
+  let b2 = {};
+
+  switch (startingAnchor) {
+    case "top":
+    case "bottom":
+      b1 = {
+        x: end.y < start.y ? mX : start.x,
+        y: end.y < start.y ? start.y : start.x
+      }
+      break;
+    case "right":
+    case "left":
+      b1 = {
+        x: end.x > start.x ? mX : start.x,
+        y: end.x > start.x ? start.y : mY
+      }
+  }
+
+  switch (endingAnchor) {
+    case "top":
+    case "bottom":
+      b2 = {
+        x: end.y < start.y ? mX : end.x,
+        y: end.y < start.y ? end.y : mY
+      }
+      break;
+    case "right":
+    case "left":
+      b2 = {
+        x: end.x > start.x ? mX : end.x,
+        y: end.x > start.x ? end.y : mY
+      }
+      break;
+  }
+  return { b1, b2 };
 }
 
 export function computeStartingAnchorPosition(
@@ -124,36 +206,35 @@ const SvgArrow = ({
 }: Props) => {
   const actualArrowLength = arrowLength * 2;
 
-  const xs = startingPoint.x;
-  const ys = startingPoint.y;
-
-  const { xe, ye } = computeEndingPointAccordingToArrow(
-    endingPoint.x,
-    endingPoint.y,
+  const actualEnd = computeEndingPointAccordingToArrow(
+    endingPoint,
     actualArrowLength,
     strokeWidth,
     endingAnchor,
   );
 
-  const { xa1, ya1 } = computeStartingAnchorPosition(
-    xs,
-    ys,
-    xe,
-    ye,
+  const { a1, a2 } = computeAnchors(
+    startingPoint,
+    actualEnd,
     startingAnchor,
-  );
-  const { xa2, ya2 } = computeEndingAnchorPosition(
-    xs,
-    ys,
-    xe,
-    ye,
-    endingAnchor,
-  );
+    endingAnchor
+  )
+
+  const { b1, b2 } = computeBreakpoints(
+    a1,
+    a2,
+    startingAnchor,
+    endingAnchor
+  )
+
+  console.log({a1, a2})
 
   const pathString =
-    `M${xs},${ys} ` + `C${xa1},${ya1} ${xa2},${ya2} ` + `${xe},${ye}`;
+    `M${startingPoint.x},${startingPoint.y} ` + 
+    `L${a1.x},${a1.y} ${b1.x},${b1.y} ${b2.x},${b2.y} ${a2.x},${a2.y}` + 
+    ` ${actualEnd.x},${actualEnd.y}`;
 
-  const { xl, yl, wl, hl } = computeLabelDimensions(xs, ys, xe, ye);
+  const { xl, yl, wl, hl } = computeLabelDimensions(startingPoint.x, startingPoint.y, actualEnd.x, actualEnd.y);
 
   return (
     <g>
@@ -176,7 +257,7 @@ const SvgArrow = ({
             <div>{arrowLabel}</div>
           </div>
         </foreignObject>
-      )}
+          )}
     </g>
   );
 };
