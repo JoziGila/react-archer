@@ -97,7 +97,7 @@ export function computeBreakpoints(
     case "bottom":
       b1 = {
         x: end.y < start.y ? mX : start.x,
-        y: end.y < start.y ? start.y : start.x
+        y: end.y < start.y ? start.y : mY
       }
       break;
     case "right":
